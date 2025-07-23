@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using RecipeShare.Core.Interfaces;
 using RecipeShare.Infrastructure.Data;
 using RecipeShare.Infrastructure.Repositories;
-using RecipeShare.Api.HealthChecks; // Add this
+using RecipeShare.Api.HealthChecks;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
