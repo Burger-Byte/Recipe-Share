@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecipeShare.Core", "src\Rec
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecipeShare.Infrastructure", "src\RecipeShare.Infrastructure\RecipeShare.Infrastructure.csproj", "{6BC9ED6C-9C78-4D18-8D8C-DEBF57A4793A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{86968154-D4B9-48B1-BD00-5D6A9026495A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecipeShare.Tests", "tests\RecipeShare.Tests\RecipeShare.Tests.csproj", "{489E877A-75C2-40B0-BE82-9BBE047F4F4D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,10 +36,15 @@ Global
 		{6BC9ED6C-9C78-4D18-8D8C-DEBF57A4793A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6BC9ED6C-9C78-4D18-8D8C-DEBF57A4793A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6BC9ED6C-9C78-4D18-8D8C-DEBF57A4793A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{489E877A-75C2-40B0-BE82-9BBE047F4F4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{489E877A-75C2-40B0-BE82-9BBE047F4F4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{489E877A-75C2-40B0-BE82-9BBE047F4F4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{489E877A-75C2-40B0-BE82-9BBE047F4F4D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{0128E7BB-0D0E-487C-A77E-D87357B807E3} = {3FB6AC63-3FE4-447E-9F30-C6F02EEF5713}
 		{2B48FACC-CF49-4594-A7DC-814896C74FD9} = {3FB6AC63-3FE4-447E-9F30-C6F02EEF5713}
 		{6BC9ED6C-9C78-4D18-8D8C-DEBF57A4793A} = {3FB6AC63-3FE4-447E-9F30-C6F02EEF5713}
+		{489E877A-75C2-40B0-BE82-9BBE047F4F4D} = {86968154-D4B9-48B1-BD00-5D6A9026495A}
 	EndGlobalSection
 EndGlobal
