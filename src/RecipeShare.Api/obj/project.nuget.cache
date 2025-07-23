@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "d9oJeo4tUZz8YgidTYxB8HVXJn9RNHiKbujJVSfkXqgIK0yRg+wBZTS4QVTkyfDL89P9IbvisBqpafibUyqR8g==",
+  "dgSpecHash": "2YqM7jj8lY59f1547rodguQLvRtwAbo4BC1k9pA7FBSmuK0jsPaJZjfAXMt7sTLd89oT1/E5hI/5XX9xOhBTtA==",
   "success": true,
   "projectFilePath": "D:\\Coding\\Recipe-Share\\src\\RecipeShare.Api\\RecipeShare.Api.csproj",
   "expectedPackageFiles": [
@@ -56,6 +56,8 @@
     "C:\\Users\\Jaques\\.nuget\\packages\\microsoft.sqlserver.server\\1.0.0\\microsoft.sqlserver.server.1.0.0.nupkg.sha512",
     "C:\\Users\\Jaques\\.nuget\\packages\\microsoft.win32.systemevents\\6.0.0\\microsoft.win32.systemevents.6.0.0.nupkg.sha512",
     "C:\\Users\\Jaques\\.nuget\\packages\\mono.texttemplating\\3.0.0\\mono.texttemplating.3.0.0.nupkg.sha512",
+    "C:\\Users\\Jaques\\.nuget\\packages\\npgsql\\9.0.3\\npgsql.9.0.3.nupkg.sha512",
+    "C:\\Users\\Jaques\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\9.0.4\\npgsql.entityframeworkcore.postgresql.9.0.4.nupkg.sha512",
     "C:\\Users\\Jaques\\.nuget\\packages\\serilog\\4.2.0\\serilog.4.2.0.nupkg.sha512",
     "C:\\Users\\Jaques\\.nuget\\packages\\serilog.aspnetcore\\9.0.0\\serilog.aspnetcore.9.0.0.nupkg.sha512",
     "C:\\Users\\Jaques\\.nuget\\packages\\serilog.extensions.hosting\\9.0.0\\serilog.extensions.hosting.9.0.0.nupkg.sha512",
