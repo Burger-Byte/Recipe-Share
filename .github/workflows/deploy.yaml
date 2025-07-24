@@ -160,8 +160,6 @@ jobs:
     - name: Test Docker image build
       run: |
         echo "Testing Docker image build only..."
-        
-        # Just verify the image was built and can be inspected
         if docker image inspect ${{ env.DOCKER_IMAGE_NAME }}:latest > /dev/null 2>&1; then
           echo "Docker image built successfully"
           docker image inspect ${{ env.DOCKER_IMAGE_NAME }}:latest --format='{{.Config.Env}}'
@@ -173,13 +171,10 @@ jobs:
     - name: Test Docker Compose config only
       run: |
         echo "Testing Docker Compose configuration only..."
-        
-        # Set required environment variables
         export SQL_PASSWORD="TestPassword123!"
         export SQL_USERNAME="sa"
         
-        # Just test the configuration without starting services
-        if docker-compose config > /dev/null; then
+        if docker compose config > /dev/null; then
           echo "Docker Compose configuration is valid"
         else
           echo "Docker Compose configuration is invalid"
