@@ -20,6 +20,8 @@ RUN dotnet publish "RecipeShare.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publ
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 RUN adduser --disabled-password --home /app --gecos '' --shell /bin/bash appuser && chown -R appuser /app
 USER appuser
 
