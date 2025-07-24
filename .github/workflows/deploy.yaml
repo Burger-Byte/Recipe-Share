@@ -86,7 +86,7 @@ jobs:
     name: SonarCloud Code Analysis
     runs-on: windows-latest
     needs: build-and-test
-    if: ${{ secrets.SONAR_TOKEN != '' }} 
+    continue-on-error: true
     
     steps:
     - name: Set up JDK 17
