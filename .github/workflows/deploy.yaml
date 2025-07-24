@@ -6,6 +6,14 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  statuses: write
+  actions: read
+  security-events: write
+
 env:
   DOTNET_VERSION: '8.0.x'
   DOCKER_IMAGE_NAME: 'recipeshare-api'
@@ -203,50 +211,6 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   
-  # deploy:
-  #   name: Deploy to Environment
-  #   runs-on: ubuntu-latest
-  #   needs: [docker-build, security-scan]
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-  #   environment: production  # This creates a GitHub Environment for approvals
-  #   
-  #   steps:
-  #   - name: Download Docker image
-  #     uses: actions/download-artifact@v4
-  #     with:
-  #       name: docker-image
-  #   
-  #   - name: Load Docker image
-  #     run: docker load < recipeshare-api.tar.gz
-  #   
-  #   # Example deployment steps (uncomment and modify as needed):
-  #   
-  #   # Deploy to Docker Registry
-  #   # - name: Login to Container Registry
-  #   #   uses: docker/login-action@v3
-  #   #   with:
-  #   #     registry: your-registry.com
-  #   #     username: ${{ secrets.REGISTRY_USERNAME }}
-  #   #     password: ${{ secrets.REGISTRY_PASSWORD }}
-  #   
-  #   # - name: Push to Registry
-  #   #   run: |
-  #   #     docker tag ${{ env.DOCKER_IMAGE_NAME }}:latest your-registry.com/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
-  #   #     docker push your-registry.com/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
-  #   
-  #   # Deploy to Kubernetes
-  #   # - name: Deploy to Kubernetes
-  #   #   run: |
-  #   #     kubectl set image deployment/recipeshare-api recipeshare-api=your-registry.com/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
-  #   #     kubectl rollout status deployment/recipeshare-api
-  #   
-  #   # Deploy using Docker Compose (for local/staging environments)
-  #   # - name: Deploy with Docker Compose
-  #   #   run: |
-  #   #     docker-compose pull
-  #   #     docker-compose up -d
-  #   #     docker-compose ps
-
   notify:
     name: Notify Results
     runs-on: ubuntu-latest
