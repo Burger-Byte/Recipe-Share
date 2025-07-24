@@ -44,8 +44,9 @@ jobs:
     - name: Run unit tests
       run: |
         dotnet test --configuration Release --no-build --verbosity normal \
-          --collect:"XPlat Code Coverage" \
-          --results-directory ./TestResults/
+        --collect:"XPlat Code Coverage" \
+        --logger "trx;LogFileName=test-results.trx" \
+        --results-directory ./TestResults/
 
     - name: Generate test report
       uses: dorny/test-reporter@v1
