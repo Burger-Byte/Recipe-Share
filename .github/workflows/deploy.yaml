@@ -1,0 +1,250 @@
+name: RecipeShare CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  statuses: write
+  actions: read
+  security-events: write
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOCKER_IMAGE_NAME: 'recipeshare-api'
+  DOCKER_TAG: ${{ github.sha }}
+  SQL_PASSWORD: ${{ secrets.SQL_PASSWORD }}
+  SQL_USERNAME: ${{ secrets.SQL_USERNAME }}
+
+jobs:
+  build-and-test:
+    name: Build and Test Application
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Run unit tests
+      run: |
+        dotnet test --configuration Release --no-build --verbosity normal \
+        --collect:"XPlat Code Coverage" \
+        --logger "trx;LogFileName=test-results.trx" \
+        --results-directory ./TestResults/
+
+    - name: Generate test report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: .NET Tests
+        path: 'TestResults/*.trx'
+        reporter: dotnet-trx
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: TestResults/
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          src/RecipeShare.Api/bin/Release/
+          src/RecipeShare.Core/bin/Release/
+          src/RecipeShare.Infrastructure/bin/Release/
+
+  sonarcloud-analysis:
+    name: SonarCloud Code Analysis
+    runs-on: windows-latest
+    needs: build-and-test
+    continue-on-error: true
+    
+    steps:
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: 17
+        distribution: 'zulu'
+        
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 
+        
+    - name: Cache SonarCloud packages
+      uses: actions/cache@v4
+      with:
+        path: ~\sonar\cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+        
+    - name: Cache SonarCloud scanner
+      id: cache-sonar-scanner
+      uses: actions/cache@v4
+      with:
+        path: .\.sonar\scanner
+        key: ${{ runner.os }}-sonar-scanner
+        restore-keys: ${{ runner.os }}-sonar-scanner
+        
+    - name: Install SonarCloud scanner
+      if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+      shell: powershell
+      run: |
+        New-Item -Path .\.sonar\scanner -ItemType Directory
+        dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+        
+    - name: Build and analyze with SonarCloud
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      shell: powershell
+      run: |
+        .\.sonar\scanner\dotnet-sonarscanner begin /k:"Burger-Byte_Recipe-Share" /o:"burger-byte" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+        dotnet build --configuration Release
+        .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+  docker-build:
+    name: Build and Test Docker Images
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: false
+        load: true
+        tags: |
+          ${{ env.DOCKER_IMAGE_NAME }}:latest
+          ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Test Docker image build
+      run: |
+        echo "Testing Docker image build only..."
+        if docker image inspect ${{ env.DOCKER_IMAGE_NAME }}:latest > /dev/null 2>&1; then
+          echo "Docker image built successfully"
+          docker image inspect ${{ env.DOCKER_IMAGE_NAME }}:latest --format='{{.Config.Env}}'
+        else
+          echo "Docker image not found"
+          exit 1
+        fi
+
+    - name: Test Docker Compose config only
+      run: |
+        echo "Testing Docker Compose configuration only..."
+        export SQL_PASSWORD="TestPassword123!"
+        export SQL_USERNAME="sa"
+        
+        if docker compose config > /dev/null; then
+          echo "Docker Compose configuration is valid"
+        else
+          echo "Docker Compose configuration is invalid"
+          exit 1
+        fi
+
+    - name: Save Docker image
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        docker save ${{ env.DOCKER_IMAGE_NAME }}:latest | gzip > recipeshare-api.tar.gz
+
+    - name: Upload Docker image artifact
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v4
+      with:
+        name: docker-image
+        path: recipeshare-api.tar.gz
+        retention-days: 7
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.DOCKER_IMAGE_NAME }}:latest
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: .NET Security Audit
+      run: |
+        curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0
+        export PATH="$HOME/.dotnet:$PATH"
+        dotnet list package --vulnerable --include-transitive
+
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [build-and-test, sonarcloud-analysis, docker-build, security-scan]
+    if: always()
+    
+    steps:
+    - name: Notify Success
+      if: ${{ needs.build-and-test.result == 'success' && needs.docker-build.result == 'success' }}
+      run: |
+        echo "Pipeline completed successfully!"
+        echo "- .NET build and tests: Success"
+        echo "- Docker build and tests: Success"
+        echo "- SonarCloud analysis: ${{ needs.sonarcloud-analysis.result }}"
+        echo "- Security scanning: ${{ needs.security-scan.result }}"
+
+    - name: Notify Failure
+      if: ${{ needs.build-and-test.result == 'failure' || needs.docker-build.result == 'failure' }}
+      run: |
+        echo "Pipeline failed!"
+        echo "- .NET build and tests: ${{ needs.build-and-test.result }}"
+        echo "- Docker build and tests: ${{ needs.docker-build.result }}"
+        echo "- SonarCloud analysis: ${{ needs.sonarcloud-analysis.result }}"
+        echo "- Security scanning: ${{ needs.security-scan.result }}"
+        exit 1

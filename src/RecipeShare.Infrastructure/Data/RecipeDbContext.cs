@@ -17,8 +17,8 @@ namespace RecipeShare.Infrastructure.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.DietaryTags)
                     .HasConversion(
-                        v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                        v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null) ?? new List<string>()
+                        v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                        v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()
                     );
             });
             
