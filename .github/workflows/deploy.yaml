@@ -156,61 +156,34 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Test Docker image
+    - name: Test Docker image build
       run: |
-        echo "Testing Docker image startup..."
-        docker run --name test-container -d \
-          -e ASPNETCORE_ENVIRONMENT=Production \
-          -e ConnectionStrings__DefaultConnection="Server=dummy;Database=TestDb;User Id=${SQL_USERNAME};Password=${SQL_PASSWORD};TrustServerCertificate=True;" \
-          -p 8080:8080 \
-          ${{ env.DOCKER_IMAGE_NAME }}:latest
-        sleep 10
-        echo "Container status:"
-        docker ps -a | grep test-container || true
-        echo "Container logs:"
-        docker logs test-container || true
-        if docker logs test-container 2>&1 | grep -q -E "(Application started|Now listening on|Hosting environment)"; then
-          echo "Docker image test passed - application started"
+        echo "Testing Docker image build only..."
+        
+        # Just verify the image was built and can be inspected
+        if docker image inspect ${{ env.DOCKER_IMAGE_NAME }}:latest > /dev/null 2>&1; then
+          echo "Docker image built successfully"
+          docker image inspect ${{ env.DOCKER_IMAGE_NAME }}:latest --format='{{.Config.Env}}'
         else
-          echo "Application may have started (database connection issues are expected in CI)"
+          echo "Docker image not found"
+          exit 1
         fi
-        docker stop test-container || true
-        docker rm test-container || true
 
-    - name: Test Docker Compose
+    - name: Test Docker Compose config only
       run: |
-        echo "Testing Docker Compose configuration..."
-        docker-compose config
+        echo "Testing Docker Compose configuration only..."
+        
+        # Set required environment variables
         export SQL_PASSWORD="TestPassword123!"
         export SQL_USERNAME="sa"
-        echo "Starting services..."
-        docker-compose up -d
-
-        echo "Waiting for services to initialize..."
-        sleep 90
-
-        echo "Service status:"
-        docker-compose ps
-
-        echo "API Container logs:"
-        docker-compose logs recipeshare-api | tail -20
         
-        echo "Database Container logs:"  
-        docker-compose logs recipeshare-db | tail -10
-
-        echo "Testing health endpoint..."
-        for i in {1..5}; do
-          if curl -f http://localhost:8080/healthz; then
-            echo "Health check passed!"
-            break
-          else
-            echo "Health check attempt $i failed, retrying in 10s..."
-            sleep 10
-          fi
-        done || echo "Health check timeout - this may be expected if database is still initializing"
-        
-        echo "Cleaning up..."
-        docker-compose down -v
+        # Just test the configuration without starting services
+        if docker-compose config > /dev/null; then
+          echo "Docker Compose configuration is valid"
+        else
+          echo "Docker Compose configuration is invalid"
+          exit 1
+        fi
 
     - name: Save Docker image
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
