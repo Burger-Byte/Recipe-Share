@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  recipeshare-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: recipeshare-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD={{SQL_PASSWORD}}
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - recipeshare_data:/var/opt/mssql
+    networks:
+      - recipeshare-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U {{SQL_USERNAME}} -P {{SQL_PASSWORD}} -Q 'SELECT 1' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  recipeshare-api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: recipeshare-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=recipeshare-db;Database=RecipeShareDb;User Id={{SQL_USERNAME}};Password={{SQL_PASSWORD}};TrustServerCertificate=True;MultipleActiveResultSets=true
+      - Logging__LogLevel__Default=Information
+      - Logging__LogLevel__Microsoft.AspNetCore=Warning
+    ports:
+      - "8080:8080"
+    depends_on:
+      recipeshare-db:
+        condition: service_healthy
+    networks:
+      - recipeshare-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    restart: unless-stopped
+
+volumes:
+  recipeshare_data:
+    driver: local
+
+networks:
+  recipeshare-network:
+    driver: bridge
