@@ -164,71 +164,52 @@ jobs:
           -e ConnectionStrings__DefaultConnection="Server=dummy;Database=TestDb;User Id=${SQL_USERNAME};Password=${SQL_PASSWORD};TrustServerCertificate=True;" \
           -p 8080:8080 \
           ${{ env.DOCKER_IMAGE_NAME }}:latest
-
         sleep 10
-        
-        # Check container status
-        echo "📋 Container status:"
+        echo "Container status:"
         docker ps -a | grep test-container || true
-        
-        # Show container logs for debugging
-        echo "📄 Container logs:"
+        echo "Container logs:"
         docker logs test-container || true
-        
-        # Test if the application at least attempts to start
         if docker logs test-container 2>&1 | grep -q -E "(Application started|Now listening on|Hosting environment)"; then
-          echo "✅ Docker image test passed - application started"
+          echo "Docker image test passed - application started"
         else
-          echo "ℹ️  Application may have started (database connection issues are expected in CI)"
+          echo "Application may have started (database connection issues are expected in CI)"
         fi
-        
-        # Clean up
         docker stop test-container || true
         docker rm test-container || true
 
     - name: Test Docker Compose
       run: |
-        echo "🔨 Testing Docker Compose configuration..."
-        
-        # Test docker-compose configuration
+        echo "Testing Docker Compose configuration..."
         docker-compose config
-        
-        # Set required environment variables for the test
         export SQL_PASSWORD="TestPassword123!"
         export SQL_USERNAME="sa"
-        
-        echo "🚀 Starting services..."
-        # Start services in background  
+        echo "Starting services..."
         docker-compose up -d
-        
-        # Wait longer for SQL Server to be ready
-        echo "⏳ Waiting for services to initialize..."
+
+        echo "Waiting for services to initialize..."
         sleep 90
-        
-        # Check service health
-        echo "📋 Service status:"
+
+        echo "Service status:"
         docker-compose ps
-        
-        echo "📄 API Container logs:"
+
+        echo "API Container logs:"
         docker-compose logs recipeshare-api | tail -20
         
-        echo "📄 Database Container logs:"  
+        echo "Database Container logs:"  
         docker-compose logs recipeshare-db | tail -10
-        
-        # Test API endpoint with more retries
-        echo "🔍 Testing health endpoint..."
+
+        echo "Testing health endpoint..."
         for i in {1..5}; do
           if curl -f http://localhost:8080/healthz; then
-            echo "✅ Health check passed!"
+            echo "Health check passed!"
             break
           else
-            echo "⏳ Health check attempt $i failed, retrying in 10s..."
+            echo "Health check attempt $i failed, retrying in 10s..."
             sleep 10
           fi
-        done || echo "ℹ️  Health check timeout - this may be expected if database is still initializing"
+        done || echo "Health check timeout - this may be expected if database is still initializing"
         
-        # Clean up
-        echo "🧹 Cleaning up..."
+        echo "Cleaning up..."
         docker-compose down -v
 
     - name: Save Docker image
@@ -269,7 +250,6 @@ jobs:
 
     - name: .NET Security Audit
       run: |
-        # Setup .NET for security audit
         curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0
         export PATH="$HOME/.dotnet:$PATH"
         dotnet list package --vulnerable --include-transitive
@@ -284,16 +264,16 @@ jobs:
     - name: Notify Success
       if: ${{ needs.build-and-test.result == 'success' && needs.docker-build.result == 'success' }}
       run: |
-        echo "✅ Pipeline completed successfully!"
-        echo "- .NET build and tests: ✅"
-        echo "- Docker build and tests: ✅"
+        echo "Pipeline completed successfully!"
+        echo "- .NET build and tests: Success"
+        echo "- Docker build and tests: Success"
         echo "- SonarCloud analysis: ${{ needs.sonarcloud-analysis.result }}"
         echo "- Security scanning: ${{ needs.security-scan.result }}"
 
     - name: Notify Failure
       if: ${{ needs.build-and-test.result == 'failure' || needs.docker-build.result == 'failure' }}
       run: |
-        echo "❌ Pipeline failed!"
+        echo "Pipeline failed!"
         echo "- .NET build and tests: ${{ needs.build-and-test.result }}"
         echo "- Docker build and tests: ${{ needs.docker-build.result }}"
         echo "- SonarCloud analysis: ${{ needs.sonarcloud-analysis.result }}"
