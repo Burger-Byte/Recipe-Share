@@ -1,19 +1,33 @@
-# Complete Kubernetes setup with SQL Server + API
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: recipeshare-secrets
-type: Opaque
-stringData:
-  ConnectionStrings__DefaultConnection: "Server=sqlserver-service,1433;Database=RecipeShareDb;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true;"
-  SQL_USERNAME: "sa"
-  SQL_PASSWORD: "YourPassword123!"
+  name: recipeshare-config
+  namespace: default
+data:
+  ASPNETCORE_URLS: "http://+:8080"
+  MSSQL_PID: "Express"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sqlserver-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sqlserver
+  namespace: default
+  labels:
+    app: sqlserver
 spec:
   replicas: 1
   selector:
@@ -31,24 +45,38 @@ spec:
         - name: ACCEPT_EULA
           value: "Y"
         - name: SA_PASSWORD
-          value: "YourPassword123!"
+          valueFrom:
+            secretKeyRef:
+              name: recipeshare-secrets
+              key: SQL_PASSWORD
         - name: MSSQL_PID
-          value: "Express"
+          valueFrom:
+            configMapKeyRef:
+              name: recipeshare-config
+              key: MSSQL_PID
         ports:
         - containerPort: 1433
+        volumeMounts:
+        - name: sqlserver-storage
+          mountPath: /var/opt/mssql
         resources:
           requests:
             memory: "512Mi"
             cpu: "250m"
           limits:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "2Gi"
+            cpu: "1000m"
+      volumes:
+      - name: sqlserver-storage
+        persistentVolumeClaim:
+          claimName: sqlserver-pvc
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: sqlserver-service
+  namespace: default
 spec:
   selector:
     app: sqlserver
@@ -62,8 +90,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: recipeshare-api
+  namespace: default
+  labels:
+    app: recipeshare-api
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: recipeshare-api
@@ -80,30 +111,33 @@ spec:
         - containerPort: 8080
         env:
         - name: ASPNETCORE_ENVIRONMENT
-          value: "Development"
+          valueFrom:
+            secretKeyRef:
+              name: recipeshare-secrets
+              key: ASPNETCORE_ENVIRONMENT
         - name: ASPNETCORE_URLS
-          value: "http://+:8080"
+          valueFrom:
+            configMapKeyRef:
+              name: recipeshare-config
+              key: ASPNETCORE_URLS
         - name: ConnectionStrings__DefaultConnection
           valueFrom:
             secretKeyRef:
               name: recipeshare-secrets
-              key: ConnectionStrings__DefaultConnection
-        
+              key: CONNECTION_STRING_K8S
         resources:
           requests:
-            memory: "128Mi"
+            memory: "256Mi"
             cpu: "100m"
           limits:
-            memory: "256Mi"
-            cpu: "200m"
-        
+            memory: "1Gi"
+            cpu: "500m"
         livenessProbe:
           httpGet:
             path: /healthz
             port: 8080
           initialDelaySeconds: 60
           periodSeconds: 30
-        
         readinessProbe:
           httpGet:
             path: /healthz
@@ -116,6 +150,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: recipeshare-api-service
+  namespace: default
 spec:
   type: NodePort
   ports:

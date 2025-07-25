@@ -1,4 +1,4 @@
-# From .NET Core 3.0 you can use the command: `dotnet new gitignore` to generate a customizable .gitignore file
+# .gitignore file
 
 *.swp
 *.*~
@@ -30,5 +30,39 @@ msbuild.log
 msbuild.err
 msbuild.wrn
 
-# Visual Studio 2015
+# Visual Studio 
 .vs/
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
+
+# Docker files 
+docker-compose.override.yml
+docker-compose.*.yml
+
+# Kubernetes secrets
+k8s-secrets.yaml
+*-secrets.yaml
+
+# Local development databases
+*.db
+*.sqlite
+*.sqlite3
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# IDE files
+*.swp
+*.swo
+*~
+.idea/
+*.iml
