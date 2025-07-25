@@ -5,8 +5,8 @@ metadata:
 type: Opaque
 stringData: 
   ConnectionStrings__DefaultConnection: "Server=localhost,1433;Database=RecipeShareDb;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true;"
-  SQL_USERNAME: "${SQL_USERNAME}"
-  SQL_PASSWORD: "${SQL_PASSWORD}"
+  SQL_USERNAME: "sa"
+  SQL_PASSWORD: "YourPassword123!"
 
 ---
 apiVersion: apps/v1
