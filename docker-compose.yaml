@@ -27,9 +27,9 @@ services:
       dockerfile: Dockerfile
     container_name: recipeshare-api
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Server=recipeshare-db;Database=RecipeShareDb;User Id=${SQL_USERNAME};Password=${SQL_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${ASPNETCORE_URLS}
+      - ConnectionStrings__DefaultConnection=Server=recipeshare-db,1433;Database=${DATABASE_NAME};User Id=${SQL_USERNAME};Password=${SQL_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
       - Logging__LogLevel__Default=Information
       - Logging__LogLevel__Microsoft.AspNetCore=Warning
     ports:
