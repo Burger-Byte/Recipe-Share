@@ -4,7 +4,7 @@ metadata:
   name: recipeshare-secrets
 type: Opaque
 stringData: 
-  ConnectionStrings__DefaultConnection: "Server=localhost,1433;Database=RecipeShareDb;User Id=${SQL_USERNAME};Password=${SQL_PASSWORD};TrustServerCertificate=true;"
+  ConnectionStrings__DefaultConnection: "Server=localhost,1433;Database=RecipeShareDb;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true;"
   SQL_USERNAME: "${SQL_USERNAME}"
   SQL_PASSWORD: "${SQL_PASSWORD}"
 
