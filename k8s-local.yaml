@@ -1,12 +1,61 @@
+# Complete Kubernetes setup with SQL Server + API
 apiVersion: v1
 kind: Secret
 metadata:
   name: recipeshare-secrets
 type: Opaque
-stringData: 
-  ConnectionStrings__DefaultConnection: "Server=localhost,1433;Database=RecipeShareDb;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true;"
+stringData:
+  ConnectionStrings__DefaultConnection: "Server=sqlserver-service,1433;Database=RecipeShareDb;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true;"
   SQL_USERNAME: "sa"
   SQL_PASSWORD: "YourPassword123!"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sqlserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sqlserver
+  template:
+    metadata:
+      labels:
+        app: sqlserver
+    spec:
+      containers:
+      - name: sqlserver
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+        - name: ACCEPT_EULA
+          value: "Y"
+        - name: SA_PASSWORD
+          value: "YourPassword123!"
+        - name: MSSQL_PID
+          value: "Express"
+        ports:
+        - containerPort: 1433
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sqlserver-service
+spec:
+  selector:
+    app: sqlserver
+  ports:
+  - port: 1433
+    targetPort: 1433
+  type: ClusterIP
 
 ---
 apiVersion: apps/v1
@@ -32,6 +81,8 @@ spec:
         env:
         - name: ASPNETCORE_ENVIRONMENT
           value: "Development"
+        - name: ASPNETCORE_URLS
+          value: "http://+:8080"
         - name: ConnectionStrings__DefaultConnection
           valueFrom:
             secretKeyRef:
@@ -50,26 +101,26 @@ spec:
           httpGet:
             path: /healthz
             port: 8080
-          initialDelaySeconds: 30
+          initialDelaySeconds: 60
           periodSeconds: 30
         
         readinessProbe:
           httpGet:
             path: /healthz
             port: 8080
-          initialDelaySeconds: 5
+          initialDelaySeconds: 30
           periodSeconds: 10
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: recipeshare-api
+  name: recipeshare-api-service
 spec:
-  type: NodePort 
+  type: NodePort
   ports:
   - port: 80
     targetPort: 8080
-    nodePort: 30080 
+    nodePort: 30080
   selector:
     app: recipeshare-api
