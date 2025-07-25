@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: recipeshare-api
-        image: jaquesburger/recipe-share:latest
+        image: jaquesburger/recipeshare-api:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
